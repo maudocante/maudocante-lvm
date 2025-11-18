@@ -1,43 +1,54 @@
+# Criar partição primaria de 40G no hd de 120G
+fdisk /dev/vdb <<EOF
+n
+p
+1
+2048
++40G
+t
+8e
+p
+w
+EOF
 # Creação do partiçção fisica
 pvcreate /dev/vdb1
+
 # Creação do grupo
 vgcreate vgnew /dev/vdb1
+
 # Extensão do volume lógico em percentagem
 lvcreate -l 50%VG -n lvnew1 vgnew
+
 # Crear volume logico com tamanho predeterminado "10G"
 lvcreate -L 10G -n lvnew2 vgnew
+
 # Formatação
 mkfs.ext3 /dev/mapper/vgnew-lvnew2
+mkfs.ext3 /dev/vgnew/lvnew2
+
 # Redimensionar volume logico adicionando valor predeterminado "+5G"
 lvresize -L +5G /dev/vgnew/lvnew2
+
 # Atribuir todo espaço disponivel
 lvresize -l +100%FREE /dev/vgnew/lvnew2
 
-# Mostrar partição atual (ANOTE o Start sector)
-Command: p
+# Estender partição
+fdisk /dev/vdb
+# Comandos: p, d, n, p, 1, [MESMO START], [Enter], t, 8e, w
 
-# Deletar partição 1 (NÃO perde dados no LVM)
-Command: d
-Partition number: 1
+# Recarregar
+partprobe /dev/vdb
 
-# Criar nova partição
-Command: n
-Partition type: p
-Partition number: 1
+# Redimensionar partição fisica
+pvresize  /dev/vdb1
 
-# ⚠️ CRUCIAL: Usar o MESMO Start sector
-First sector: [COLAR AQUI O START SECTOR ANOTADO]
 
-# Usar 100% do disco
-Last sector: [Enter]
 
-# Definir tipo como LVM
-Command: t
-Selected partition: 1
-Hex code: 8e
+⚠️ Importante: Por que é Seguro?
+LVM armazena metadados no início da partição
 
-# Verificar
-Command: p
+Ao manter o mesmo Start Sector, não mexemos nos dados existentes
 
-# Gravar e sair
-Command: w
+Só estendemos o final da partição para o espaço não alocado
+
+Os dados do LVM permanecem intacto
