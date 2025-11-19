@@ -1,4 +1,4 @@
-# Criar partição primaria de 40G no hd de 120G
+# 1- Criar partição primaria de 40G no hd de 120G
 fdisk /dev/vdb <<EOF
 n
 p
@@ -10,17 +10,40 @@ t
 p
 w
 EOF
-# Creação do partiçção fisica
+# 2- Criação do partiçção fisica
 pvcreate /dev/vdb1
 
-# Creação do grupo
+# 3- Criação do grupo
 vgcreate vgnew /dev/vdb1
 
-# Extensão do volume lógico em percentagem
-lvcreate -l 50%VG -n lvnew1 vgnew
+# 4- Criação do volume lógico
+lvcreate -L 20G -n lvnew1 vgnew
 
-# Crear volume logico com tamanho predeterminado "10G"
+# 5- Formatação do volume lógico
+mkfs.ext3 /dev/vgnew/lvnew1
+# ou mkfs.ext3 /dev/mapper/vgnew-lvnew1
+
+# 6-  Criar volume logico 2 com tamanho predeterminado "10G"
 lvcreate -L 10G -n lvnew2 vgnew
+
+# 7- Redimensionar o volume lógico
+lvextend -l +100%FREE /dev/vgnew/lvnew1
+# ou lvresize -l +100%FREE /dev/vgnew/lvnew1
+# ou lvresize -l +50%VG /dev/vgnew/lvnew1
+# ou lvextend -l +50%VG /dev/vgnew/lvnew1
+# ou lvresize -l +50%VG /dev/mapper/vgnew-lvnew1
+lvresize -l +50%VG /dev/vgnew/lvnew1
+# ou lvresize -l +50%VG /dev/mapper/vgnew-lvnew1
+# ou lvextend -l +50%VG /dev/mapper/vgnew-lvnew1
+# ou lvextend -l +100%FREE /dev/mapper/vgnew-lvnew1
+# ou lvresize -l +100%FREE /dev/mapper/vgnew-lvnew1
+
+# 8- Redimensionar o sistema de arquivos
+resize2fs /dev/vgnew/lvnew1
+# ou resize2fs /dev/mapper/vgnew-lvnew1
+# 9- Verificação
+df -h
+
 
 # Formatação
 mkfs.ext3 /dev/mapper/vgnew-lvnew2
