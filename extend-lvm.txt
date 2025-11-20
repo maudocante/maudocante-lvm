@@ -20,24 +20,33 @@ vgcreate vgnew /dev/vdb1
 lvcreate -L 20G -n lvnew1 vgnew
 
 # 5- Formatação do volume lógico
-mkfs.ext3 /dev/vgnew/lvnew1
+mkfs.ext3 /dev/vgnew/lvnew1 # Sistema de ficheiro
 # ou mkfs.ext3 /dev/mapper/vgnew-lvnew1
 
 # 6-  Criar volume logico 2 com tamanho predeterminado "10G"
 lvcreate -L 10G -n lvnew2 vgnew
-mkfs.ext3 /dev/vgnew/lvnew1
+mkfs.ext3 /dev/vgnew/lvnew2 # Sistema de ficheiro
+
+# Montar as duas unidades
+mkdir -p /mnt/pont1 && sudo mount /dev/vgnew/lvnew1 /mnt/pont1
+mkdir -p /mnt/pont2 && sudo mount /dev/vgnew/lvnew2 /mnt/pont2
+df -Th
 
 # 7- Redimensionar o volume lógico
 lvextend -l +100%FREE /dev/vgnew/lvnew2
-# Redimensionar o sistema de arquivos
-resize2fs /dev/vgnew/lvnew2
+df -Th
+resize2fs /dev/vgnew/lvnew2 # Redimensionar o sistema de arquivos
 
 # 8- Estender partição primaria
-fdisk -l /dev/vdb
+fdisk -l /dev/vdb # copie o Sector inicia e final do disco
 # fdisk /dev/vdb
 # Comandos: p, d, n, p, 1, [MESMO START], [Enter], t, 8e, w
+umount /dev/vgnew/lvnew1
+umount /dev/vgnew/lvnew2
+vgchange -a n vgnew
 
 fdisk /dev/vdb <<EOF
+d
 n
 p
 1
@@ -51,6 +60,8 @@ EOF
 
 # 9- Recarregar
 partprobe /dev/vdb
+vgchange -a y vgnew
+
 
 # 10- Redimensionar partição fisica
 pvresize  /dev/vdb1
@@ -63,34 +74,8 @@ resize2fs /dev/vgnew/lvnew2
 lvextend -l +100%FREE /dev/vgnew/lvnew1
 resize2fs /dev/vgnew/lvnew1
 
-
-# ou lvresize -l +100%FREE /dev/vgnew/lvnew1
-# ou lvresize -l +50%VG /dev/vgnew/lvnew1
-# ou lvextend -l +50%VG /dev/vgnew/lvnew1
-# ou lvresize -l +50%VG /dev/mapper/vgnew-lvnew1
-lvresize -l +50%VG /dev/vgnew/lvnew1
-# ou lvresize -l +50%VG /dev/mapper/vgnew-lvnew1
-# ou lvextend -l +50%VG /dev/mapper/vgnew-lvnew1
-# ou lvextend -l +100%FREE /dev/mapper/vgnew-lvnew1
-# ou lvresize -l +100%FREE /dev/mapper/vgnew-lvnew1
-
-
-# ou resize2fs /dev/mapper/vgnew-lvnew1
-# 9- Verificação
-df -h
-
-
-# Formatação
-mkfs.ext3 /dev/mapper/vgnew-lvnew2
-mkfs.ext3 /dev/vgnew/lvnew2
-
 # Redimensionar volume logico adicionando valor predeterminado "+5G"
 lvresize -L +5G /dev/vgnew/lvnew2
-
-# Atribuir todo espaço disponivel
-lvresize -l +100%FREE /dev/vgnew/lvnew2
-
-
 
 
 
