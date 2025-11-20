@@ -25,9 +25,45 @@ mkfs.ext3 /dev/vgnew/lvnew1
 
 # 6-  Criar volume logico 2 com tamanho predeterminado "10G"
 lvcreate -L 10G -n lvnew2 vgnew
+mkfs.ext3 /dev/vgnew/lvnew1
 
 # 7- Redimensionar o volume lógico
+lvextend -l +100%FREE /dev/vgnew/lvnew2
+# Redimensionar o sistema de arquivos
+resize2fs /dev/vgnew/lvnew2
+
+# 8- Estender partição primaria
+fdisk -l /dev/vdb
+# fdisk /dev/vdb
+# Comandos: p, d, n, p, 1, [MESMO START], [Enter], t, 8e, w
+
+fdisk /dev/vdb <<EOF
+n
+p
+1
+2048
+
+t
+8e
+p
+w
+EOF
+
+# 9- Recarregar
+partprobe /dev/vdb
+
+# 10- Redimensionar partição fisica
+pvresize  /dev/vdb1
+
+# 11- Comando para aumentar +50 GB ao lvnew2
+lvextend -L +50G /dev/vgnew/lvnew2
+resize2fs /dev/vgnew/lvnew2
+
+# 12- Atribuir todo o espaço restante do vgnew que é 30GB
 lvextend -l +100%FREE /dev/vgnew/lvnew1
+resize2fs /dev/vgnew/lvnew1
+
+
 # ou lvresize -l +100%FREE /dev/vgnew/lvnew1
 # ou lvresize -l +50%VG /dev/vgnew/lvnew1
 # ou lvextend -l +50%VG /dev/vgnew/lvnew1
@@ -38,8 +74,7 @@ lvresize -l +50%VG /dev/vgnew/lvnew1
 # ou lvextend -l +100%FREE /dev/mapper/vgnew-lvnew1
 # ou lvresize -l +100%FREE /dev/mapper/vgnew-lvnew1
 
-# 8- Redimensionar o sistema de arquivos
-resize2fs /dev/vgnew/lvnew1
+
 # ou resize2fs /dev/mapper/vgnew-lvnew1
 # 9- Verificação
 df -h
@@ -55,15 +90,9 @@ lvresize -L +5G /dev/vgnew/lvnew2
 # Atribuir todo espaço disponivel
 lvresize -l +100%FREE /dev/vgnew/lvnew2
 
-# Estender partição
-fdisk /dev/vdb
-# Comandos: p, d, n, p, 1, [MESMO START], [Enter], t, 8e, w
 
-# Recarregar
-partprobe /dev/vdb
 
-# Redimensionar partição fisica
-pvresize  /dev/vdb1
+
 
 
 
